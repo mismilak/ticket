@@ -9,10 +9,11 @@
         <div class="mb-3"><label class="form-label">عنوان</label><input name="title" class="form-control" value="{{ old('title', $event->title) }}" required></div>
         <div class="mb-3"><label class="form-label">زیرعنوان / هنرمند</label><input name="subtitle" class="form-control" value="{{ old('subtitle', $event->subtitle) }}"></div>
         <div class="mb-3"><label class="form-label">توضیحات</label><textarea name="description" class="form-control" rows="6">{{ old('description', $event->description) }}</textarea></div>
-        <div class="row g-3">
-            <div class="col-md-6"><label class="form-label">تاریخ و ساعت شروع (شمسی)</label><input name="starts_at" class="form-control" dir="ltr" placeholder="1405/07/20 21:00" value="{{ old('starts_at', $event->starts_at ? jdate($event->starts_at, 'input') : '') }}" required></div>
-            <div class="col-md-6"><label class="form-label">پایان (اختیاری)</label><input name="ends_at" class="form-control" dir="ltr" placeholder="1405/07/20 23:00" value="{{ old('ends_at', $event->ends_at ? jdate($event->ends_at, 'input') : '') }}"></div>
-        </div>
+    </div></div>
+
+    <div class="card mb-3"><div class="card-header d-flex justify-content-between"><span class="fw-bold">سانس‌ها (زمان‌های برگزاری)</span>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="addSession">+ افزودن سانس</button></div>
+        <div class="card-body" id="sessionRows"><div class="form-text mb-2">هر سانس موجودی صندلی و ظرفیت مستقل دارد. تاریخ شمسی: ۱۴۰۵/۰۷/۲۰ ۲۱:۳۰ — پایان اختیاری است.</div></div>
     </div></div>
 
     <div class="card mb-3"><div class="card-header fw-bold">مکان برگزاری و صندلی‌ها</div><div class="card-body">
@@ -54,6 +55,19 @@
 const hallCats = @json($hallCats);
 const prices = @json($seatPrices);
 const general = @json($generalData);
+const sessionRows = @json($sessionRows);
+const sBox = document.getElementById('sessionRows'); let si = 0;
+function addSession(t = {}) {
+    const i = si++;
+    sBox.insertAdjacentHTML('beforeend', `<div class="row g-2 mb-2 align-items-center">
+      <input type="hidden" name="sessions[${i}][id]" value="${t.id ?? ''}">
+      <div class="col-md-4"><input class="form-control" dir="ltr" name="sessions[${i}][starts_at]" placeholder="شروع: 1405/07/20 21:00" value="${t.starts_at ?? ''}"></div>
+      <div class="col-md-4"><input class="form-control" dir="ltr" name="sessions[${i}][ends_at]" placeholder="پایان (اختیاری)" value="${t.ends_at ?? ''}"></div>
+      <div class="col-md-3"><div class="form-check form-switch"><input type="checkbox" class="form-check-input" name="sessions[${i}][sales_open]" value="1" ${t.sales_open ?? true ? 'checked' : ''}><label class="form-check-label">فروش باز</label></div></div>
+      <div class="col-md-1"><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.row').remove()">×</button></div></div>`);
+}
+document.getElementById('addSession').onclick = () => addSession();
+(sessionRows.length ? sessionRows : [{}]).forEach(addSession);
 const hall = document.getElementById('hall'), box = document.getElementById('seatPrices'), rows = document.getElementById('generalRows');
 function renderSeats() {
     const cats = hallCats[hall.value] || [];

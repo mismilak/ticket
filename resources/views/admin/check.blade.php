@@ -5,7 +5,7 @@
 @if($item)
 <div class="card" style="max-width:560px"><div class="card-body">
     <h2 class="h5">{{ $item->order->event->title }}</h2>
-    <div class="mb-1">{{ jdate($item->order->event->starts_at) }}</div>
+    <div class="mb-1">{{ jdate($item->order->startsAt()) }}</div>
     <div class="mb-1">{{ $item->ticketType->name }} @if($item->seatLabel())— <b>{{ $item->seatLabel() }}</b>@endif</div>
     <div class="mb-3">دارنده: {{ $item->order->user->displayName() }} ({{ $item->order->user->mobile }})</div>
     @if($item->checked_in_at)

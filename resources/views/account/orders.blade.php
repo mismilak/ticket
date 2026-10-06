@@ -6,7 +6,7 @@
     @forelse($orders as $o)
         <a href="{{ route('orders.show', $o) }}" class="card mb-2 text-decoration-none text-body"><div class="card-body d-flex gap-3 align-items-center flex-wrap">
             <img src="{{ $o->event->posterUrl() }}" class="thumb" alt="">
-            <div class="flex-grow-1"><div class="fw-bold">{{ $o->event->title }}</div><div class="small text-muted">{{ jdate($o->event->starts_at) }} · سفارش {{ $o->code }}</div></div>
+            <div class="flex-grow-1"><div class="fw-bold">{{ $o->event->title }}</div><div class="small text-muted">{{ jdate($o->startsAt()) }} · سفارش {{ $o->code }}</div></div>
             <div class="text-end"><div class="fw-bold">{{ price($o->total) }}</div>
                 <span class="badge bg-{{ ['paid' => 'success', 'pending' => 'warning', 'failed' => 'danger'][$o->status] ?? 'secondary' }}">{{ $o->statusLabel() }}</span></div>
         </div></a>

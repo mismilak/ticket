@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Event;
+use App\Models\EventSession;
 use App\Models\Hall;
 use App\Models\OrderItem;
 use App\Services\OrderService;
@@ -27,7 +28,7 @@ class EventController extends Controller
 
     public function edit(Event $event)
     {
-        return $this->form($event->load('ticketTypes'));
+        return $this->form($event->load('ticketTypes', 'sessions'));
     }
 
     private function form(Event $event)
@@ -40,6 +41,7 @@ class EventController extends Controller
             'hallCats' => $halls->mapWithKeys(fn ($h) => [$h->id => $h->categories->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'color' => $c->color])->values()]),
             'seatPrices' => $event->exists ? $event->ticketTypes->whereNotNull('seat_category_id')->where('is_active', true)->pluck('price', 'seat_category_id') : collect(),
             'generalData' => $event->exists ? $event->ticketTypes->whereNull('seat_category_id')->where('is_active', true)->map(fn ($t) => $t->only('id', 'name', 'price', 'capacity'))->values() : [],
+            'sessionRows' => $event->exists ? $event->sessions->map(fn ($s) => ['id' => $s->id, 'starts_at' => jdate($s->starts_at, 'input'), 'ends_at' => $s->ends_at ? jdate($s->ends_at, 'input') : '', 'sales_open' => $s->sales_open])->values() : [],
             'general' => $event->exists ? $event->ticketTypes->whereNull('seat_category_id')->where('is_active', true)->values() : collect(),
         ]);
     }
@@ -67,20 +69,29 @@ class EventController extends Controller
             'hall_id' => 'nullable|exists:halls,id',
             'venue_name' => 'nullable|max:200',
             'venue_address' => 'nullable|max:255',
-            'starts_at' => 'required',
-            'ends_at' => 'nullable',
+            'sessions' => 'required|array|min:1',
             'status' => 'required|in:draft,published',
             'poster' => 'nullable|image|max:4096',
             'slug' => 'nullable|max:150',
         ]);
-        $starts = parse_jdate($request->starts_at);
-        if (! $starts) {
-            back()->withErrors(['starts_at' => 'تاریخ شروع نامعتبر است. نمونه: ۱۴۰۵/۰۷/۲۰ ۲۱:۳۰'])->withInput()->throwResponse();
+        // سانس‌ها: هر ردیف یک تاریخ/ساعت شمسی
+        $rows = [];
+        foreach ($request->input('sessions', []) as $n => $r) {
+            if (trim((string) ($r['starts_at'] ?? '')) === '') {
+                continue;
+            }
+            $start = parse_jdate($r['starts_at']);
+            if (! $start) {
+                back()->withErrors(['sessions' => 'تاریخ سانس '.($n + 1).' نامعتبر است. نمونه: ۱۴۰۵/۰۷/۲۰ ۲۱:۳۰'])->withInput()->throwResponse();
+            }
+            $rows[] = ['id' => $r['id'] ?? null, 'starts_at' => $start, 'ends_at' => ! empty($r['ends_at']) ? parse_jdate($r['ends_at']) : null, 'sales_open' => ! empty($r['sales_open'])];
         }
-        $ends = $request->filled('ends_at') ? parse_jdate($request->ends_at) : null;
-
-        $data['starts_at'] = $starts;
-        $data['ends_at'] = $ends;
+        if (! $rows) {
+            back()->withErrors(['sessions' => 'حداقل یک سانس لازم است.'])->withInput()->throwResponse();
+        }
+        $data['starts_at'] = $rows[0]['starts_at'];
+        $data['ends_at'] = null;
+        unset($data['sessions']);
         $data['sales_open'] = $request->boolean('sales_open');
         $data['is_featured'] = $request->boolean('is_featured');
         $base = slugify($data["slug"] ?: $data["title"]) ?: 'event';
@@ -95,7 +106,24 @@ class EventController extends Controller
             $data['poster'] = ResourceController::storeImage($request->file('poster'));
         }
         $event->fill($data)->save();
+        $this->syncSessions($event, $rows);
         $this->syncTicketTypes($request, $event);
+    }
+
+    private function syncSessions(Event $event, array $rows): void
+    {
+        $keep = [];
+        foreach ($rows as $r) {
+            $attrs = ['starts_at' => $r['starts_at'], 'ends_at' => $r['ends_at'], 'sales_open' => $r['sales_open']];
+            $s = $r['id'] ? $event->sessions()->find($r['id']) : null;
+            $s ? $s->update($attrs) : ($s = $event->sessions()->create($attrs));
+            $keep[] = $s->id;
+        }
+        // سانسی که سفارش دارد حذف نمی‌شود، فقط فروشش بسته می‌شود
+        foreach ($event->sessions()->whereNotIn('id', $keep)->get() as $s) {
+            \App\Models\Order::where('event_session_id', $s->id)->exists() ? $s->update(['sales_open' => false]) : $s->delete();
+        }
+        $event->syncDatesFromSessions();
     }
 
     private function syncTicketTypes(Request $request, Event $event): void
@@ -146,11 +174,13 @@ class EventController extends Controller
     }
 
     /** گزارش فروش و لیست بلیط‌ها */
-    public function report(Event $event)
+    public function report(Request $request, Event $event)
     {
         OrderService::releaseExpired();
-        $items = OrderItem::with(['order.user', 'ticketType', 'seat'])->where('event_id', $event->id)
-            ->whereHas('order', fn ($q) => $q->where('status', 'paid'))->orderBy('id')->get();
+        $items = OrderItem::with(['order.user', 'order.session', 'order.event', 'ticketType', 'seat'])->where('event_id', $event->id)
+            ->whereHas('order', fn ($q) => $q->where('status', 'paid'))
+            ->when($request->filled('session'), fn ($q) => $q->where('event_session_id', $request->session))->orderBy('id')->get();
+        $event->load('sessions');
         return view('admin.events.report', compact('event', 'items'));
     }
 }

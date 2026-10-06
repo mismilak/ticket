@@ -5,7 +5,7 @@
     <div class="col-lg-7">
         <div class="card"><div class="card-body">
             <h1 class="h5 mb-3">مرور سفارش</h1>
-            <div class="d-flex gap-3 mb-3"><img src="{{ $event->posterUrl() }}" class="thumb" alt=""><div><div class="fw-bold">{{ $event->title }}</div><div class="small text-muted">{{ jdate($event->starts_at) }}<br>{{ $event->venueLabel() }}</div></div></div>
+            <div class="d-flex gap-3 mb-3"><img src="{{ $event->posterUrl() }}" class="thumb" alt=""><div><div class="fw-bold">{{ $event->title }}</div><div class="small text-muted">{{ jdate($session->starts_at) }}<br>{{ $event->venueLabel() }}</div></div></div>
             @foreach($lines as $l)<div class="d-flex justify-content-between py-2 border-top small"><span>{{ $l['title'] }}</span><span>{{ price($l['price']) }}</span></div>@endforeach
             @if($fee)<div class="d-flex justify-content-between py-2 border-top small"><span>کارمزد خدمات</span><span>{{ price($fee) }}</span></div>@endif
             <div class="d-flex justify-content-between py-2 border-top fw-bold fs-5"><span>مبلغ قابل پرداخت</span><span class="text-primary">{{ price($total) }}</span></div>

@@ -28,17 +28,31 @@ class TicketFlowTest extends TestCase
     {
         $event = Event::where('slug', 'demo-concert')->first();
         $seat = Seat::first();
+        $session = $event->sessions->first();
         $a = User::factory()->create(['mobile' => '09111111111']);
         $b = User::factory()->create(['mobile' => '09122222222']);
 
-        $order = OrderService::create($a, $event, ['seats' => [$seat->id]]);
+        $order = OrderService::create($a, $event, $session, ['seats' => [$seat->id]]);
         $this->expectExceptionMessage('رزرو');
         try {
-            OrderService::create($b, $event, ['seats' => [$seat->id]]);
+            OrderService::create($b, $event, $session, ['seats' => [$seat->id]]);
         } finally {
             OrderService::release($order, 'expired');
-            $this->assertNotNull(OrderService::create($b, $event, ['seats' => [$seat->id]]));
+            $this->assertNotNull(OrderService::create($b, $event, $session, ['seats' => [$seat->id]]));
         }
+    }
+
+    public function test_sessions_have_independent_seat_inventory(): void
+    {
+        $event = Event::where('slug', 'demo-concert')->first();
+        [$s1, $s2] = [$event->sessions[0], $event->sessions[1]];
+        $seat = Seat::first();
+        $u = User::factory()->create(['mobile' => '09111111111']);
+
+        OrderService::create($u, $event, $s1, ['seats' => [$seat->id]]);
+        $this->assertNotNull(OrderService::create($u, $event, $s2, ['seats' => [$seat->id]]));
+        $this->assertSame('held', OrderService::seatStatuses($s1)[$seat->id]);
+        $this->assertSame('held', OrderService::seatStatuses($s2)[$seat->id]);
     }
 
     public function test_general_ticket_capacity_is_enforced(): void
@@ -48,9 +62,9 @@ class TicketFlowTest extends TestCase
         $type->update(['capacity' => 2]);
         $u = User::factory()->create(['mobile' => '09111111111']);
 
-        OrderService::create($u, $event, ['general' => [$type->id => 2]]);
+        OrderService::create($u, $event, $event->sessions->first(), ['general' => [$type->id => 2]]);
         $this->expectExceptionMessage('ظرفیت');
-        OrderService::create($u, $event, ['general' => [$type->id => 1]]);
+        OrderService::create($u, $event, $event->sessions->first(), ['general' => [$type->id => 1]]);
     }
 
     public function test_full_purchase_with_otp_and_test_gateway(): void
@@ -58,7 +72,7 @@ class TicketFlowTest extends TestCase
         $event = Event::where('slug', 'demo-concert')->first();
         $seat = Seat::first();
 
-        $this->post('/events/demo-concert/reserve', ['seats' => [$seat->id]])->assertRedirect('/checkout');
+        $this->post('/events/demo-concert/reserve', ['seats' => [$seat->id], 'session' => $event->sessions->first()->id])->assertRedirect('/checkout');
         $this->get('/checkout')->assertRedirect('/login');
 
         $this->post('/login', ['mobile' => '09123456789']);

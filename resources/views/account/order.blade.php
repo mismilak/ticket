@@ -23,7 +23,7 @@
                 <div class="main">
                     <div class="small text-muted">{{ setting('site_name') }}</div>
                     <h2 class="h5 fw-bold">{{ $order->event->title }}</h2>
-                    <div class="small mb-1"><i class="bi bi-calendar-event text-primary"></i> {{ jdate($order->event->starts_at) }}</div>
+                    <div class="small mb-1"><i class="bi bi-calendar-event text-primary"></i> {{ jdate($order->startsAt()) }}</div>
                     <div class="small mb-1"><i class="bi bi-geo-alt text-primary"></i> {{ $order->event->venueLabel() }}</div>
                     <div class="small mb-1"><i class="bi bi-ticket text-primary"></i> {{ $item->ticketType->name }}@if($item->seatLabel()) · <b>{{ $item->seatLabel() }}</b> ({{ $item->seat->level->name }})@endif</div>
                     <div class="small"><i class="bi bi-person text-primary"></i> {{ $order->user->displayName() }}</div>

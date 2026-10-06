@@ -10,7 +10,18 @@
             @if($event->status !== 'published')<span class="badge bg-warning text-dark mb-2">پیش‌نویس (فقط مدیر می‌بیند)</span>@endif
             <h1 class="h3 fw-bold">{{ $event->title }}</h1>
             @if($event->subtitle)<p class="opacity-75">{{ $event->subtitle }}</p>@endif
-            <div class="info-row"><i class="bi bi-calendar-event"></i><div>{{ jdate($event->starts_at) }}</div></div>
+            <div class="info-row"><i class="bi bi-calendar-event"></i><div>
+                @if($sessions->count() > 1)
+                    <div class="small opacity-75 mb-1">سانس را انتخاب کنید:</div>
+                    <div class="d-flex flex-wrap gap-2">
+                    @foreach($sessions as $s)
+                        <a href="{{ route('events.show', [$event, 'session' => $s->id]) }}" class="btn btn-sm {{ $s->id === $session->id ? 'btn-primary' : 'btn-outline-light' }} {{ $s->isOnSale() ? '' : 'opacity-50' }}">{{ jdate($s->starts_at) }}</a>
+                    @endforeach
+                    </div>
+                @else
+                    {{ jdate($session->starts_at) }}
+                @endif
+            </div></div>
             <div class="info-row"><i class="bi bi-geo-alt"></i><div>{{ $event->venueLabel() }}
                 @if($event->hall?->venue?->city) ، {{ $event->hall->venue->city }}@endif
                 @php $addr = $event->hall?->venue?->address ?: $event->venue_address; @endphp
@@ -24,7 +35,7 @@
 <div class="container py-4">
 <div class="row g-4">
     <div class="col-lg-8 order-2 order-lg-1">
-        @if($seated && $event->isOnSale())
+        @if($seated && $onSale)
         <div class="seatmap-wrap" id="seatmap">
             <div class="seatmap-tools">
                 <strong class="me-2"><i class="bi bi-grid-3x3-gap"></i> انتخاب صندلی</strong>
@@ -49,13 +60,14 @@
     <div class="col-lg-4 order-1 order-lg-2">
     <div class="card ticket-box"><div class="card-body">
         <h2 class="h5 mb-3"><i class="bi bi-ticket-perforated text-primary"></i> خرید بلیط</h2>
-        @if(! $event->isOnSale())
-            <div class="alert alert-secondary mb-0">{{ $event->starts_at->isPast() ? 'این رویداد برگزار شده است.' : 'فروش بلیط فعال نیست.' }}</div>
+        @if(! $onSale)
+            <div class="alert alert-secondary mb-0">{{ $session->starts_at->isPast() ? 'این رویداد برگزار شده است.' : 'فروش بلیط فعال نیست.' }}</div>
         @elseif(! $seated && $general->isEmpty())
             <div class="alert alert-secondary mb-0">بلیطی برای فروش تعریف نشده است.</div>
         @else
         <form method="post" action="{{ route('events.reserve', $event) }}" id="buyForm">
             @csrf
+            <input type="hidden" name="session" value="{{ $session->id }}">
             @foreach($general as $t)
                 <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                     <div><div class="fw-bold">{{ $t->name }}</div><div class="small text-muted">{{ $t->price ? price($t->price) : 'رایگان' }}
@@ -83,7 +95,7 @@
 @endsection
 
 @push('scripts')
-@if($event->isOnSale())
+@if($onSale)
 <script src="{{ asset('js/seatmap.js') }}"></script>
 <script>
 (function () {
@@ -118,7 +130,7 @@
     @if($seated)
     const map = new SeatMap({
         stage: document.getElementById('stage'), tabs: document.getElementById('levelTabs'), legend: document.getElementById('legend'),
-        url: @json(route('events.seatmap', $event)), max, currency: cur,
+        url: @json(route('events.seatmap', [$event, 'session' => $session->id])), max, currency: cur,
         canPick: () => picked.length + general().reduce((s, x) => s + +x.value, 0) < max,
         onChange: list => { picked = list; refresh(); },
         onLimit: () => alert('حداکثر ' + fa(max) + ' بلیط در هر سفارش مجاز است.'),

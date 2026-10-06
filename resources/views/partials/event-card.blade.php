@@ -5,7 +5,7 @@
     </div>
     <div class="body">
         <h3>{{ $event->title }}</h3>
-        <div class="meta"><i class="bi bi-calendar-event"></i> {{ jdate($event->starts_at, 'full') }}</div>
+        <div class="meta"><i class="bi bi-calendar-event"></i> {{ jdate($event->starts_at, 'full') }}@if(($event->sessions_count ?? 0) > 1) <span class="badge bg-light text-dark border">{{ fa_digits($event->sessions_count) }} سانس</span>@endif</div>
         @if($event->venueLabel())<div class="meta"><i class="bi bi-geo-alt"></i> {{ $event->venueLabel() }}</div>@endif
         <div class="mt-2 d-flex justify-content-between align-items-center">
             @if($event->isOnSale() && $event->minPrice() !== null)

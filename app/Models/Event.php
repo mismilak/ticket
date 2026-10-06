@@ -29,6 +29,25 @@ class Event extends Model
         return $this->belongsTo(Hall::class);
     }
 
+    public function sessions()
+    {
+        return $this->hasMany(EventSession::class)->orderBy('starts_at');
+    }
+
+    /** تاریخ نمایشی رویداد (نزدیک‌ترین سانس آینده) را از روی سانس‌ها هم‌گام می‌کند */
+    public function syncDatesFromSessions(): void
+    {
+        $s = $this->sessions()->get();
+        if ($s->isEmpty()) {
+            return;
+        }
+        $next = $s->first(fn ($x) => ($x->ends_at ?: $x->starts_at)->isFuture()) ?: $s->last();
+        $this->forceFill([
+            'starts_at' => $next->starts_at,
+            'ends_at' => $s->max(fn ($x) => $x->ends_at ?: $x->starts_at),
+        ])->save();
+    }
+
     public function ticketTypes()
     {
         return $this->hasMany(TicketType::class);

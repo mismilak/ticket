@@ -32,6 +32,16 @@ class Order extends Model
         return $this->belongsTo(Event::class);
     }
 
+    public function session()
+    {
+        return $this->belongsTo(EventSession::class, 'event_session_id');
+    }
+
+    public function startsAt()
+    {
+        return $this->session?->starts_at ?? $this->event->starts_at;
+    }
+
     public function items()
     {
         return $this->hasMany(OrderItem::class);

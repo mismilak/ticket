@@ -13,7 +13,7 @@ class TicketCheckController extends Controller
     {
         $item = null;
         if ($code = strtoupper(trim((string) $request->code))) {
-            $item = OrderItem::with(['order.user', 'order.event', 'seat', 'ticketType'])->where('ticket_code', $code)->first();
+            $item = OrderItem::with(['order.user', 'order.event', 'order.session', 'seat', 'ticketType'])->where('ticket_code', $code)->first();
             if (! $item || $item->order->status !== 'paid') {
                 $item = null;
                 session()->now('error', 'بلیطی با این کد معتبر نیست.');

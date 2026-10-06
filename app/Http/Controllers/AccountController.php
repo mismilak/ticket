@@ -28,7 +28,7 @@ class AccountController extends Controller
     public function order(Order $order)
     {
         abort_unless($order->user_id === auth()->id() || auth()->user()->isAdmin(), 404);
-        $order->load(['event.hall.venue', 'items.ticketType', 'items.seat.level', 'payments']);
+        $order->load(['session', 'event.hall.venue', 'items.ticketType', 'items.seat.level', 'payments']);
         return view('account.order', compact('order'));
     }
 }

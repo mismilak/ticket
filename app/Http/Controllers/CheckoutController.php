@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Models\EventSession;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Seat;
@@ -24,6 +25,7 @@ class CheckoutController extends Controller
             return redirect()->route('profile')->with('status', 'برای ادامه خرید نام خود را وارد کنید.');
         }
         $event = Event::with('ticketTypes')->findOrFail($cart['event']);
+        $session = EventSession::where('event_id', $event->id)->findOrFail($cart['session']);
         $typesByCat = $event->ticketTypes->whereNotNull('seat_category_id')->keyBy('seat_category_id');
         $lines = [];
         $total = 0;
@@ -43,7 +45,7 @@ class CheckoutController extends Controller
         $fee = (int) setting('service_fee', 0) * $count;
 
         return view('checkout', [
-            'event' => $event, 'lines' => $lines, 'fee' => $fee, 'total' => $total + $fee,
+            'event' => $event, 'session' => $session, 'lines' => $lines, 'fee' => $fee, 'total' => $total + $fee,
             'gateways' => Gateway::active(),
         ]);
     }
@@ -60,9 +62,9 @@ class CheckoutController extends Controller
         }
 
         try {
-            $order = OrderService::create($request->user(), Event::findOrFail($cart['event']), $cart);
+            $order = OrderService::create($request->user(), Event::findOrFail($cart['event']), EventSession::findOrFail($cart['session']), $cart);
         } catch (\RuntimeException $e) {
-            return redirect()->route('events.show', Event::find($cart['event']))->with('error', $e->getMessage());
+            return redirect()->route('events.show', [Event::find($cart['event']), 'session' => $cart['session']])->with('error', $e->getMessage());
         }
         session()->forget('cart');
         $order->update(['gateway' => $request->gateway]);
@@ -98,7 +100,7 @@ class CheckoutController extends Controller
     /** بازگشت از درگاه (GET/POST) */
     public function callback(Request $request, Payment $payment)
     {
-        $order = $payment->order()->with('items', 'user', 'event')->first();
+        $order = $payment->order()->with('items', 'user', 'event', 'session')->first();
 
         if ($payment->status === 'paid' || $order->status === 'paid') {
             return redirect()->route('orders.show', $order);

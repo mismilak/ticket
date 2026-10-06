@@ -46,15 +46,21 @@ class DemoSeeder extends Seeder
             'description' => "این یک رویداد نمونه است.\nبرای ویرایش به پنل مدیریت بروید.",
             'starts_at' => now()->addDays(20)->setTime(21, 0), 'status' => 'published', 'is_featured' => true,
         ]);
+        foreach ([now()->addDays(20)->setTime(21, 0), now()->addDays(21)->setTime(18, 0), now()->addDays(21)->setTime(21, 30)] as $d) {
+            $event->sessions()->create(['starts_at' => $d]);
+        }
+        $event->syncDatesFromSessions();
         foreach ([[$vip, 1500000], [$gold, 900000], [$std, 500000], [$balc, 350000]] as [$c, $p]) {
             $event->ticketTypes()->create(['seat_category_id' => $c->id, 'name' => $c->name, 'price' => $p]);
         }
 
-        Event::create([
+        $conf = Event::create([
             'category_id' => Category::where('slug', 'conference')->value('id'), 'title' => 'همایش نمونه (بلیط تعدادی)', 'slug' => 'demo-conference',
             'venue_name' => 'برج میلاد', 'description' => 'رویداد بدون پلان صندلی؛ فروش تعدادی.',
             'starts_at' => now()->addDays(10)->setTime(9, 0), 'status' => 'published',
-        ])->ticketTypes()->createMany([
+        ]);
+        $conf->sessions()->create(['starts_at' => $conf->starts_at]);
+        $conf->ticketTypes()->createMany([
             ['name' => 'بلیط عادی', 'price' => 200000, 'capacity' => 100],
             ['name' => 'دانشجویی', 'price' => 100000, 'capacity' => 30],
         ]);

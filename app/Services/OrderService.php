@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Event;
+use App\Models\EventSession;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Seat;
@@ -28,12 +29,12 @@ class OrderService
     }
 
     /** وضعیت صندلی‌های رویداد: [seat_id => 'sold'|'held'] */
-    public static function seatStatuses(Event $event): array
+    public static function seatStatuses(EventSession $session): array
     {
         self::releaseExpired();
         return OrderItem::query()
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->where('order_items.event_id', $event->id)
+            ->where('order_items.event_session_id', $session->id)
             ->where('order_items.active', true)
             ->whereNotNull('order_items.seat_id')
             ->pluck('orders.status', 'order_items.seat_id')
@@ -42,9 +43,9 @@ class OrderService
     }
 
     /** تعداد فروخته‌شده/رزروشده هر نوع بلیط عمومی */
-    public static function soldCounts(Event $event): array
+    public static function soldCounts(EventSession $session): array
     {
-        return OrderItem::where('event_id', $event->id)->where('active', true)
+        return OrderItem::where('event_session_id', $session->id)->where('active', true)
             ->selectRaw('ticket_type_id, count(*) c')->groupBy('ticket_type_id')->pluck('c', 'ticket_type_id')->all();
     }
 
@@ -53,11 +54,11 @@ class OrderService
      * $cart = ['seats' => [seat_id,...], 'general' => [ticket_type_id => qty]]
      * @throws \RuntimeException با پیام فارسی
      */
-    public static function create(User $user, Event $event, array $cart): Order
+    public static function create(User $user, Event $event, EventSession $session, array $cart): Order
     {
         self::releaseExpired();
         $event->load('ticketTypes');
-        if (! $event->isOnSale()) {
+        if ($session->event_id !== $event->id || ! $event->isOnSale() || ! $session->isOnSale()) {
             throw new \RuntimeException('فروش بلیط این رویداد فعال نیست.');
         }
 
@@ -73,11 +74,12 @@ class OrderService
         }
 
         try {
-            return DB::transaction(function () use ($user, $event, $seatIds, $general, $count) {
+            return DB::transaction(function () use ($user, $event, $session, $seatIds, $general, $count) {
                 $order = Order::create([
                     'code' => strtoupper(Str::random(8)),
                     'user_id' => $user->id,
                     'event_id' => $event->id,
+                    'event_session_id' => $session->id,
                     'status' => 'pending',
                     'expires_at' => now()->addMinutes((int) setting('hold_minutes', 10)),
                 ]);
@@ -95,9 +97,9 @@ class OrderService
                             throw new \RuntimeException('صندلی '.$seat->label.' برای فروش در دسترس نیست.');
                         }
                         OrderItem::create([
-                            'order_id' => $order->id, 'event_id' => $event->id, 'ticket_type_id' => $type->id,
+                            'order_id' => $order->id, 'event_id' => $event->id, 'event_session_id' => $session->id, 'ticket_type_id' => $type->id,
                             'seat_id' => $seat->id, 'price' => $type->price,
-                            'lock_key' => $event->id.':'.$seat->id, // unique → جلوگیری از فروش مضاعف
+                            'lock_key' => $session->id.':'.$seat->id, // unique → جلوگیری از فروش مضاعف
                         ]);
                         $total += $type->price;
                     }
@@ -109,14 +111,14 @@ class OrderService
                         throw new \RuntimeException('نوع بلیط معتبر نیست.');
                     }
                     if ($type->capacity !== null) {
-                        $taken = OrderItem::where('ticket_type_id', $type->id)->where('active', true)->count();
+                        $taken = OrderItem::where('ticket_type_id', $type->id)->where('event_session_id', $session->id)->where('active', true)->count();
                         if ($taken + $qty > $type->capacity) {
                             throw new \RuntimeException('ظرفیت «'.$type->name.'» کافی نیست.');
                         }
                     }
                     for ($i = 0; $i < $qty; $i++) {
                         OrderItem::create([
-                            'order_id' => $order->id, 'event_id' => $event->id, 'ticket_type_id' => $type->id, 'price' => $type->price,
+                            'order_id' => $order->id, 'event_id' => $event->id, 'event_session_id' => $session->id, 'ticket_type_id' => $type->id, 'price' => $type->price,
                         ]);
                         $total += $type->price;
                     }

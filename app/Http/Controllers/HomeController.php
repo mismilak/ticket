@@ -12,9 +12,9 @@ class HomeController extends Controller
     public function index()
     {
         $sliders = Slider::where('is_active', true)->orderBy('sort')->get();
-        $featured = Event::with(['category', 'hall.venue', 'ticketTypes'])->published()->upcoming()
+        $featured = Event::withCount('sessions')->with(['category', 'hall.venue', 'ticketTypes'])->published()->upcoming()
             ->where('is_featured', true)->orderBy('starts_at')->limit(8)->get();
-        $events = Event::with(['category', 'hall.venue', 'ticketTypes'])->published()->upcoming()
+        $events = Event::withCount('sessions')->with(['category', 'hall.venue', 'ticketTypes'])->published()->upcoming()
             ->orderBy('starts_at')->limit(12)->get();
         $categories = Category::where('is_active', true)->orderBy('sort')->get();
 
@@ -23,7 +23,7 @@ class HomeController extends Controller
 
     public function events(Request $request)
     {
-        $q = Event::with(['category', 'hall.venue', 'ticketTypes'])->published();
+        $q = Event::withCount('sessions')->with(['category', 'hall.venue', 'ticketTypes'])->published();
         if ($request->boolean('past')) {
             $q->where('starts_at', '<', now())->orderByDesc('starts_at');
         } else {
