@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}سفارش {{ order.code }} | {{ site.site_name }}{% endblock %}
+{% block content %}<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h1 class="h5 mb-0">سفارش {{ order.code }} <span class="badge bg-{{ order.badge }}">{{ order.status_label }}</span></h1>
+        {% if order.status == 'paid' %}<button class="btn btn-outline-primary btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> چاپ بلیط</button>{% endif %}
+    </div>
+    {% if order.is_pending %}<div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span>پرداخت این سفارش تکمیل نشده است. تا {{ order.expires_at|jdate:'time' }} فرصت دارید.</span>
+        <form method="post" action="{% url 'order_pay' order.code %}" class="d-flex gap-2">{% csrf_token %}
+            <select name="gateway" class="form-select form-select-sm">{% for k, t in gateways.items %}<option value="{{ k }}" {% if k == order.gateway %}selected{% endif %}>{{ t }}</option>{% endfor %}</select>
+            <button class="btn btn-primary btn-sm text-nowrap">پرداخت {{ order.total|price }}</button></form></div>{% endif %}
+    {% if order.status == 'paid' %}
+        {% for item in items %}<div class="ticket {% if item.checked_in_at %}used{% endif %}">
+            <div class="main"><div class="small text-muted">{{ site.site_name }}</div><h2 class="h5 fw-bold">{{ order.event.title }}</h2>
+                <div class="small mb-1"><i class="bi bi-calendar-event text-primary"></i> {{ order.starts_at|jdate }}</div>
+                <div class="small mb-1"><i class="bi bi-geo-alt text-primary"></i> {{ order.event.venue_label }}</div>
+                <div class="small mb-1"><i class="bi bi-ticket text-primary"></i> {{ item.ticket_type.name }}{% if item.seat %} · <b>{{ item.seat_label }}</b> ({{ item.seat.level.name }}){% endif %} · {{ item.price|price }}</div>
+                <div class="small"><i class="bi bi-person text-primary"></i> {{ order.user.display_name }}</div>
+                {% if item.checked_in_at %}<div class="badge bg-secondary mt-2">استفاده شده</div>{% endif %}</div>
+            <div class="stub"><div class="qr" data-code="{{ item.ticket_code }}"></div><div class="fw-bold mt-2" dir="ltr">{{ item.ticket_code }}</div></div></div>{% endfor %}
+        <div class="card mt-3"><div class="card-body small"><b>مبلغ پرداختی:</b> {{ order.total|price }} · {% if payment %}<b>کد پیگیری بانک:</b> {{ payment.ref_id }} · {% endif %}<b>تاریخ:</b> {{ order.paid_at|jdate }}</div></div>
+    {% else %}
+        <div class="card"><div class="card-body">{% for item in items %}<div class="d-flex justify-content-between py-1 border-bottom"><span>{{ item.ticket_type.name }} {% if item.seat %}— {{ item.seat_label }}{% endif %}</span><span>{{ item.price|price }}</span></div>{% endfor %}
+            <div class="d-flex justify-content-between fw-bold pt-2"><span>جمع</span><span>{{ order.total|price }}</span></div></div></div>
+    {% endif %}
+</div>{% endblock %}
+{% block scripts %}<script src="{% static 'vendor/qrcode/qrcode.js' %}"></script>
+<script>document.querySelectorAll('.qr').forEach(e => { const q = qrcode(0, 'M'); q.addData(e.dataset.code); q.make(); e.innerHTML = q.createSvgTag({ cellSize: 4, margin: 0, scalable: true }); e.style.width = '120px'; });</script>{% endblock %}

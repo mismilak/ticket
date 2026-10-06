@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{{ site.site_name }}{% endblock %}</title>
+    <meta name="description" content="{% block description %}{{ site.meta_description|default:site.site_tagline }}{% endblock %}">
+    {% if site.favicon %}<link rel="icon" href="{{ site.favicon|media }}">{% endif %}
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.rtl.min.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons/bootstrap-icons.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <style>:root{--c-primary:{{ site.color_primary }};--c-secondary:{{ site.color_secondary }};--c-bg:{{ site.color_bg }};--c-header:{{ site.color_header }};--c-footer:{{ site.color_footer }};--radius:{{ site.radius }}px}{% raw site.custom_css %}</style>
+    {% raw site.head_html %}
+    {% block head %}{% endblock %}
+</head>
+<body>
+<header class="site-header">
+    <div class="container d-flex align-items-center gap-3 py-2 flex-wrap">
+        <a href="{% url 'home' %}" class="brand">{% if site.logo %}<img src="{{ site.logo|media }}" alt="{{ site.site_name }}">{% else %}{{ site.site_name }}{% endif %}</a>
+        <nav class="site-nav d-none d-lg-flex gap-1 flex-grow-1">
+            <a href="{% url 'event_list' %}">همه رویدادها</a>
+            {% for c in nav_categories %}<a href="{% url 'event_list' %}?category={{ c.slug }}" class="{% if request.GET.category == c.slug %}active{% endif %}">{{ c.name }}</a>{% endfor %}
+        </nav>
+        <form action="{% url 'event_list' %}" class="d-none d-md-flex ms-auto" style="min-width:230px">
+            <div class="input-group input-group-sm"><input name="q" value="{{ request.GET.q }}" class="form-control" placeholder="جستجوی رویداد..."><button class="btn btn-outline-primary"><i class="bi bi-search"></i></button></div>
+        </form>
+        <div class="d-flex gap-2 align-items-center ms-auto ms-md-0">
+            {% if user.is_authenticated %}
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-person"></i> {{ user.display_name }}</button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'orders' %}">بلیط‌های من</a></li>
+                    <li><a class="dropdown-item" href="{% url 'profile' %}">حساب کاربری</a></li>
+                    {% if user.is_admin %}<li><a class="dropdown-item" href="{% url 'panel_dashboard' %}">پنل مدیریت</a></li>{% endif %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="dropdown-item">خروج</button></form></li>
+                </ul>
+            </div>
+            {% else %}<a href="{% url 'login' %}" class="btn btn-sm btn-primary"><i class="bi bi-box-arrow-in-left"></i> ورود / ثبت‌نام</a>{% endif %}
+        </div>
+    </div>
+</header>
+{% include 'partials/messages.html' %}
+<main>{% block content %}{% endblock %}</main>
+<footer class="site-footer">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <h5>{{ site.site_name }}</h5>
+                <p class="small">{{ site.footer_about|default:site.site_tagline }}</p>
+                <div class="social">
+                    {% if site.instagram %}<a href="{{ site.instagram }}" target="_blank" rel="noopener"><i class="bi bi-instagram"></i></a>{% endif %}
+                    {% if site.telegram %}<a href="{{ site.telegram }}" target="_blank" rel="noopener"><i class="bi bi-telegram"></i></a>{% endif %}
+                    {% if site.whatsapp %}<a href="{{ site.whatsapp }}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i></a>{% endif %}
+                    {% if site.aparat %}<a href="{{ site.aparat }}" target="_blank" rel="noopener"><i class="bi bi-play-circle"></i></a>{% endif %}
+                </div>
+            </div>
+            <div class="col-6 col-lg-2"><h5>دسترسی سریع</h5><ul>
+                <li><a href="{% url 'event_list' %}">همه رویدادها</a></li>
+                {% for p in footer_pages %}<li><a href="{% url 'page' p.slug %}">{{ p.title }}</a></li>{% endfor %}
+            </ul></div>
+            <div class="col-6 col-lg-3"><h5>تماس با ما</h5><ul class="small">
+                {% if site.support_phone %}<li><i class="bi bi-telephone"></i> {{ site.support_phone|fa }}</li>{% endif %}
+                {% if site.support_email %}<li><i class="bi bi-envelope"></i> {{ site.support_email }}</li>{% endif %}
+                {% if site.address %}<li><i class="bi bi-geo-alt"></i> {{ site.address }}</li>{% endif %}
+            </ul></div>
+            <div class="col-lg-3"><h5>مجوزها</h5><div class="licenses">
+                {% for l in licenses %}<div class="lic" title="{{ l.title }}">
+                    {% if l.embed_code.strip %}{% raw l.embed_code %}
+                    {% elif l.link %}<a href="{{ l.link }}" target="_blank" rel="noopener"><img src="{{ l.image|media }}" alt="{{ l.title }}"></a>
+                    {% else %}<img src="{{ l.image|media }}" alt="{{ l.title }}">{% endif %}</div>{% endfor %}
+            </div></div>
+        </div>
+        <div class="copy">© {{ year }} — {{ site.copyright }}</div>
+    </div>
+</footer>
+<script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

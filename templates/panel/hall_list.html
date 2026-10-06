@@ -1,0 +1,8 @@
+{% extends 'panel/base.html' %}
+{% block content %}<h1 class="h4 mb-3">پلان‌های سالن «{{ venue.name }}»</h1>
+<form method="post" class="card mb-3"><div class="card-body d-flex gap-2">{% csrf_token %}<input name="name" class="form-control" placeholder="نام سالن / پلان (مثلاً سالن اصلی)" required><button class="btn btn-primary text-nowrap">ساخت پلان جدید</button></div></form>
+<div class="card"><table class="table mb-0 align-middle">{% for h in halls %}<tr><td>{{ h.name }}</td><td>{{ h.n|fa }} طبقه</td><td class="text-end">
+<a class="btn btn-sm btn-primary" href="{% url 'panel_hall_designer' h.id %}"><i class="bi bi-pencil-square"></i> طراحی چیدمان صندلی‌ها</a>
+<form method="post" class="d-inline" action="{% url 'panel_hall_delete' h.id %}" onsubmit="return confirm('حذف پلان؟')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">حذف</button></form></td></tr>
+{% empty %}<tr><td class="text-center text-muted py-4">پلانی ثبت نشده است.</td></tr>{% endfor %}</table></div>
+<a href="{% url 'panel_resource_list' 'venues' %}" class="btn btn-link mt-2">بازگشت</a>{% endblock %}

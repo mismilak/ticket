@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}تکمیل خرید | {{ site.site_name }}{% endblock %}
+{% block content %}<div class="container py-4"><div class="row g-4">
+    <div class="col-lg-7"><div class="card"><div class="card-body"><h1 class="h5 mb-3">مرور سفارش</h1>
+        <div class="d-flex gap-3 mb-3"><img src="{{ event.poster_url }}" class="thumb" alt=""><div><div class="fw-bold">{{ event.title }}</div><div class="small text-muted">{{ session.starts_at|jdate }}<br>{{ event.venue_label }}</div></div></div>
+        {% for l in lines %}<div class="d-flex justify-content-between py-2 border-top small"><span>{{ l.title }}</span><span>{{ l.price|price }}</span></div>{% endfor %}
+        {% if fee %}<div class="d-flex justify-content-between py-2 border-top small"><span>کارمزد خدمات</span><span>{{ fee|price }}</span></div>{% endif %}
+        <div class="d-flex justify-content-between py-2 border-top fw-bold fs-5"><span>مبلغ قابل پرداخت</span><span class="text-primary">{{ total|price }}</span></div>
+        <a href="{% url 'event_detail' event.slug %}?session={{ session.id }}" class="small">تغییر انتخاب</a></div></div></div>
+    <div class="col-lg-5"><form method="post" action="{% url 'checkout_submit' %}" class="card"><div class="card-body">{% csrf_token %}
+        <h2 class="h5 mb-3">انتخاب درگاه پرداخت</h2>
+        {% for key, title in gateways.items %}<label class="d-flex align-items-center gap-2 border rounded-ui p-3 mb-2" style="cursor:pointer"><input type="radio" name="gateway" value="{{ key }}" class="form-check-input mt-0" {% if key == selected %}checked{% endif %} required><span class="fw-bold">{{ title }}</span></label>
+        {% empty %}<div class="alert alert-danger">هیچ درگاه پرداختی فعال نیست. لطفاً با پشتیبانی تماس بگیرید.</div>{% endfor %}
+        {% if site.terms %}<div class="small border rounded p-2 mb-2" style="max-height:120px;overflow:auto;white-space:pre-line">{{ site.terms }}</div>
+        <label class="small d-block mb-2"><input type="checkbox" name="accept" value="1" class="form-check-input" required> قوانین را خوانده و می‌پذیرم</label>{% endif %}
+        <div class="small text-muted mb-3">پس از ثبت، {{ site.hold_minutes|fa }} دقیقه برای پرداخت فرصت دارید.</div>
+        <button class="btn btn-primary w-100 py-2" {% if not gateways %}disabled{% endif %}>پرداخت {{ total|price }}</button></div></form></div>
+</div></div>{% endblock %}

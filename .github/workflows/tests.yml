@@ -1,47 +1,12 @@
-name: Tests
-
-on:
-  push:
-    branches:
-      - master
-      - '*.x'
-  pull_request:
-  schedule:
-    - cron: '0 0 * * *'
-
-permissions:
-  contents: read
-
+name: tests
+on: [push, pull_request]
 jobs:
-  tests:
+  test:
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: true
-      matrix:
-        php: [8.2, 8.3, 8.4]
-
-    name: PHP ${{ matrix.php }}
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
-          coverage: none
-
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
-
-      - name: Copy environment file
-        run: cp .env.example .env
-
-      - name: Generate app key
-        run: php artisan key:generate
-
-      - name: Execute tests
-        run: vendor/bin/phpunit
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install -r requirements.txt
+      - run: python manage.py test
+        env: { DJANGO_SECRET_KEY: ci-key, DJANGO_DEBUG: '1' }

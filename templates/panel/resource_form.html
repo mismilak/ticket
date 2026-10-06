@@ -1,0 +1,12 @@
+{% extends 'panel/base.html' %}
+{% block content %}<h1 class="h4 mb-3">{% if obj %}ویرایش{% else %}افزودن{% endif %} {{ cfg.singular }}</h1>
+<form method="post" enctype="multipart/form-data" class="card"><div class="card-body">{% csrf_token %}
+    {% if form.errors %}<div class="alert alert-danger">{{ form.errors }}</div>{% endif %}
+    {% for field in form %}<div class="mb-3">
+        {% if field.field.widget.input_type == 'checkbox' %}<div class="form-check form-switch">{{ field }}<label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
+        {% else %}<label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {% if field.field.widget.input_type == 'file' %}{% if field.value %}<div class="mb-2"><img src="{{ field.value.name|media }}" style="max-height:90px;border-radius:8px"> {% if not field.field.required %}<label class="ms-2 small"><input type="checkbox" name="remove_{{ field.name }}" value="1"> حذف تصویر</label>{% endif %}</div>{% endif %}{% endif %}
+            {{ field }}{% endif %}
+    </div>{% endfor %}
+    <button class="btn btn-primary">ذخیره</button> <a class="btn btn-light" href="{% url 'panel_resource_list' key %}">بازگشت</a>
+</div></form>{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}تایید شماره موبایل | {{ site.site_name }}{% endblock %}
+{% block content %}<div class="container"><div class="card auth-card"><div class="card-body p-4">
+    <h1 class="h4 mb-1">کد تایید</h1><p class="text-muted small">کد ارسال‌شده به <b dir="ltr">{{ mobile|fa }}</b> را وارد کنید.</p>
+    {% if dev %}<div class="alert alert-warning small">حالت توسعه (API پیامک تنظیم نشده): کد شما <b>{{ dev }}</b></div>{% endif %}
+    <form method="post">{% csrf_token %}<input name="code" class="form-control form-control-lg otp-input {% if error %}is-invalid{% endif %}" inputmode="numeric" autocomplete="one-time-code" maxlength="6" autofocus required>
+        {% if error %}<div class="invalid-feedback">{{ error }}</div>{% endif %}<button class="btn btn-primary btn-lg w-100 mt-3">ورود</button></form>
+    <div class="d-flex justify-content-between mt-3 small"><a href="{% url 'login' %}">ویرایش شماره</a>
+        <form method="post" action="{% url 'login' %}">{% csrf_token %}<input type="hidden" name="mobile" value="{{ mobile }}"><button class="btn btn-link btn-sm p-0">ارسال مجدد کد</button></form></div>
+</div></div></div>{% endblock %}

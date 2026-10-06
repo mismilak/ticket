@@ -1,0 +1,9 @@
+{% extends 'panel/base.html' %}
+{% block content %}<div class="d-flex justify-content-between mb-3"><h1 class="h4">رویدادها</h1><a class="btn btn-primary" href="{% url 'panel_event_new' %}"><i class="bi bi-plus-lg"></i> رویداد جدید</a></div>
+<div class="card"><div class="table-responsive"><table class="table mb-0 align-middle"><thead><tr><th></th><th>عنوان</th><th>تاریخ</th><th>وضعیت</th><th>سفارش پرداخت‌شده</th><th></th></tr></thead>
+{% for e in events %}<tr><td><img src="{{ e.poster_url }}" class="thumb"></td><td>{{ e.title }}<div class="small text-muted">{{ e.category.name }}</div></td><td>{{ e.starts_at|jdate }}</td>
+<td><span class="badge bg-{% if e.status == 'published' %}success{% else %}secondary{% endif %}">{% if e.status == 'published' %}منتشر شده{% else %}پیش‌نویس{% endif %}</span></td><td>{{ e.paid_orders|fa }}</td>
+<td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="{% url 'event_detail' e.slug %}" target="_blank">مشاهده</a>
+<a class="btn btn-sm btn-outline-secondary" href="{% url 'panel_event_report' e.id %}">گزارش</a><a class="btn btn-sm btn-outline-primary" href="{% url 'panel_event_edit' e.id %}">ویرایش</a>
+<form method="post" class="d-inline" action="{% url 'panel_event_delete' e.id %}" onsubmit="return confirm('حذف شود؟')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">حذف</button></form></td></tr>{% endfor %}
+</table></div></div>{% endblock %}

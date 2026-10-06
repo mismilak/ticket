@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}ورود / ثبت‌نام | {{ site.site_name }}{% endblock %}
+{% block content %}<div class="container"><div class="card auth-card"><div class="card-body p-4">
+    <h1 class="h4 mb-1">ورود یا ثبت‌نام</h1><p class="text-muted small">شماره موبایل خود را وارد کنید تا کد تایید برایتان پیامک شود.</p>
+    <form method="post">{% csrf_token %}<label class="form-label">شماره موبایل</label>
+        <input name="mobile" value="{{ mobile }}" class="form-control form-control-lg text-center {% if error %}is-invalid{% endif %}" dir="ltr" inputmode="numeric" placeholder="09123456789" autofocus required>
+        {% if error %}<div class="invalid-feedback">{{ error }}</div>{% endif %}
+        <button class="btn btn-primary btn-lg w-100 mt-3">دریافت کد تایید</button></form>
+</div></div></div>{% endblock %}

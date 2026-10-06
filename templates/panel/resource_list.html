@@ -1,0 +1,12 @@
+{% extends 'panel/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3"><h1 class="h4">{{ cfg.title }}</h1><a class="btn btn-primary" href="{% url 'panel_resource_new' key %}"><i class="bi bi-plus-lg"></i> افزودن {{ cfg.singular }}</a></div>
+<div class="card"><div class="table-responsive"><table class="table mb-0 align-middle">
+<thead><tr>{% for c, label in cols %}<th>{{ label }}</th>{% endfor %}<th></th></tr></thead>
+{% for item in items %}<tr>{% for c, label in cols %}<td>{{ item|attr:c }}</td>{% endfor %}
+<td class="text-end text-nowrap">
+    {% if cfg.halls %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'panel_hall_list' item.id %}"><i class="bi bi-grid-3x3-gap"></i> مدیریت پلان‌ها</a>{% endif %}
+    <a class="btn btn-sm btn-outline-primary" href="{% url 'panel_resource_edit' key item.id %}">ویرایش</a>
+    <form method="post" action="{% url 'panel_resource_delete' key item.id %}" class="d-inline" onsubmit="return confirm('حذف شود؟')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">حذف</button></form></td></tr>
+{% empty %}<tr><td colspan="9" class="text-center text-muted py-4">موردی ثبت نشده است.</td></tr>{% endfor %}
+</table></div></div>{% endblock %}

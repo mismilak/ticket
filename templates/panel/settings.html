@@ -1,0 +1,18 @@
+{% extends 'panel/base.html' %}
+{% block content %}<h1 class="h4 mb-3">تنظیمات سایت</h1>
+<form method="post" enctype="multipart/form-data">{% csrf_token %}
+    <ul class="nav nav-tabs mb-3">{% for g in groups %}<li class="nav-item"><button type="button" class="nav-link {% if forloop.first %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#t_{{ g.key }}">{{ g.title }}</button></li>{% endfor %}</ul>
+    <div class="tab-content card"><div class="card-body">
+        {% for g in groups %}<div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="t_{{ g.key }}">
+            {% for f in g.fields %}<div class="mb-3">
+                {% if f.type == 'checkbox' %}<div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="{{ f.key }}" value="1" id="f_{{ f.key }}" {% if f.checked %}checked{% endif %}><label class="form-check-label" for="f_{{ f.key }}">{{ f.label }}</label></div>
+                {% else %}<label class="form-label">{{ f.label }}</label>
+                    {% if f.type == 'textarea' %}<textarea class="form-control" name="{{ f.key }}" rows="4">{{ f.value|default:'' }}</textarea>
+                    {% elif f.type == 'image' %}{% if f.value %}<div class="mb-2"><img src="{{ f.value|media }}" style="max-height:90px;border-radius:8px"> <label class="ms-2 small"><input type="checkbox" name="remove_{{ f.key }}" value="1"> حذف تصویر</label></div>{% endif %}<input type="file" class="form-control" name="{{ f.key }}" accept="image/*">
+                    {% elif f.type == 'color' %}<input type="color" class="form-control form-control-color" name="{{ f.key }}" value="{{ f.value }}">
+                    {% elif f.type == 'password' %}<input type="password" class="form-control" name="{{ f.key }}" dir="ltr" autocomplete="new-password" placeholder="{% if f.is_set %}•••••• (برای تغییر مقدار جدید وارد کنید){% endif %}">
+                    {% else %}<input type="{% if f.type == 'number' %}number{% else %}text{% endif %}" class="form-control" name="{{ f.key }}" value="{{ f.value|default:'' }}">{% endif %}{% endif %}</div>{% endfor %}
+            {% if g.key == 'gateways' %}<div class="alert alert-info small">آدرس بازگشت (Callback) برای هر تراکنش خودکار ساخته می‌شود؛ فقط دامنه سایت باید در پنل بانک/زرین‌پال ثبت شده باشد.</div>{% endif %}
+        </div>{% endfor %}
+        <button class="btn btn-primary">ذخیره تنظیمات</button>
+    </div></div></form>{% endblock %}

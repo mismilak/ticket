@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}بلیط‌های من | {{ site.site_name }}{% endblock %}
+{% block content %}<div class="container py-4"><h1 class="h4 mb-3">بلیط‌های من</h1>
+{% for o in orders %}<a href="{% url 'order_detail' o.code %}" class="card mb-2 text-decoration-none text-body"><div class="card-body d-flex gap-3 align-items-center flex-wrap">
+    <img src="{{ o.event.poster_url }}" class="thumb" alt="">
+    <div class="flex-grow-1"><div class="fw-bold">{{ o.event.title }}</div><div class="small text-muted">{{ o.starts_at|jdate }} · سفارش {{ o.code }}</div></div>
+    <div class="text-end"><div class="fw-bold">{{ o.total|price }}</div><span class="badge bg-{{ o.badge }}">{{ o.status_label }}</span></div></div></a>
+{% empty %}<div class="alert alert-light text-center">هنوز سفارشی ندارید.</div>{% endfor %}</div>{% endblock %}

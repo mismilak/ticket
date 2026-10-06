@@ -1,0 +1,5 @@
+Django>=5.1,<5.3
+whitenoise>=6.6
+requests>=2.31
+# اختیاری برای MySQL: mysqlclient
+# اختیاری برای اجرای production: gunicorn

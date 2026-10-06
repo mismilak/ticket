@@ -1,9 +1,0 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>در حال انتقال به درگاه...</title></head>
-<body style="font-family:Tahoma;text-align:center;padding-top:20vh">
-<p>در حال انتقال به درگاه پرداخت...</p>
-<form id="f" method="post" action="{{ $url }}">
-    @foreach($fields as $k => $v)<input type="hidden" name="{{ $k }}" value="{{ $v }}">@endforeach
-    <noscript><button>ادامه</button></noscript>
-</form>
-<script>document.getElementById('f').submit()</script>
-</body></html>

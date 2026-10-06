@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}{% if category %}{{ category.name }}{% else %}رویدادها{% endif %} | {{ site.site_name }}{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+        <h1 class="h4 mb-0 me-2">{% if category %}{{ category.name }}{% else %}همه رویدادها{% endif %}</h1>
+        <a class="btn btn-sm {% if not category %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{% url 'event_list' %}">همه</a>
+        {% for c in categories %}<a class="btn btn-sm {% if category.id == c.id %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{% url 'event_list' %}?category={{ c.slug }}">{{ c.name }}</a>{% endfor %}
+        <a class="btn btn-sm btn-link ms-auto" href="{% url 'event_list' %}{% if not request.GET.past %}?past=1{% endif %}">{% if request.GET.past %}رویدادهای پیش رو{% else %}رویدادهای گذشته{% endif %}</a>
+    </div>
+    <form class="mb-4" style="max-width:420px"><div class="input-group"><input name="q" value="{{ request.GET.q }}" class="form-control" placeholder="جستجو...">
+        {% if request.GET.category %}<input type="hidden" name="category" value="{{ request.GET.category }}">{% endif %}<button class="btn btn-primary"><i class="bi bi-search"></i></button></div></form>
+    {% if page %}<div class="row g-3 row-cols-2 row-cols-md-3 row-cols-lg-4">{% for event in page %}<div class="col">{% include 'partials/event_card.html' %}</div>{% endfor %}</div>
+    <nav class="mt-4 d-flex gap-2">{% if page.has_previous %}<a class="btn btn-outline-primary btn-sm" href="?{{ qs }}&page={{ page.previous_page_number }}">قبلی</a>{% endif %}
+    {% if page.has_next %}<a class="btn btn-outline-primary btn-sm" href="?{{ qs }}&page={{ page.next_page_number }}">بعدی</a>{% endif %}</nav>
+    {% else %}<div class="alert alert-light text-center">رویدادی یافت نشد.</div>{% endif %}
+</div>
+{% endblock %}

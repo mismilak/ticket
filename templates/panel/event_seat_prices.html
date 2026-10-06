@@ -1,0 +1,35 @@
+{% extends 'panel/base.html' %}
+{% block head %}<style>
+.sp{display:grid;grid-template-columns:300px 1fr;gap:1rem;align-items:start}@media(max-width:1000px){.sp{grid-template-columns:1fr}}
+.sp-canvas{height:calc(100vh - 190px);min-height:460px;background:#0f1124;border-radius:12px;touch-action:none;user-select:none;overflow:hidden;cursor:crosshair}
+.sp-canvas svg{width:100%;height:100%;display:block}.sp-canvas .seat text{pointer-events:none}.hint{font-size:.78rem;color:#777}
+</style>{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+    <h1 class="h5 mb-0">قیمت‌گذاری صندلی‌ها: {{ event.title }}</h1>
+    <div class="d-flex align-items-center gap-2"><span id="status" class="small text-muted"></span><a class="btn btn-light btn-sm" href="{% url 'panel_event_edit' event.id %}">بازگشت به رویداد</a><button class="btn btn-primary" id="save"><i class="bi bi-save"></i> ذخیره قیمت‌ها</button></div>
+</div>
+<div class="alert alert-info small py-2">قیمت هر صندلی = قیمت پایه دسته‌بندی‌اش، مگر اینکه اینجا قیمت اختصاصی بگذارید. صندلی‌ای که نه قیمت پایه دارد و نه قیمت اختصاصی، قابل فروش نیست (کم‌رنگ). صندلی‌های دارای قیمت اختصاصی با حلقه سفید و عدد نمایش داده می‌شوند.</div>
+<div class="sp">
+<div>
+    <div class="card mb-3"><div class="card-header fw-bold">طبقه</div><div class="card-body d-flex flex-wrap gap-1" id="levelList"></div></div>
+    <div class="card mb-3"><div class="card-header fw-bold">قیمت اختصاصی</div><div class="card-body">
+        <div class="mb-2">انتخاب‌شده: <b id="selCount">۰</b> صندلی</div>
+        <input id="price" class="form-control mb-2" dir="ltr" inputmode="numeric" placeholder="قیمت (تومان)">
+        <div class="d-flex gap-1 mb-2"><button class="btn btn-sm btn-primary flex-grow-1" id="apply">اعمال به انتخاب‌ها</button><button class="btn btn-sm btn-outline-danger" id="clear">بازگشت به قیمت پایه</button></div>
+        <hr><div class="hint mb-1">انتخاب سریع</div>
+        <div class="input-group input-group-sm mb-1"><select id="catSel" class="form-select"></select><button class="btn btn-outline-secondary" id="selCat">انتخاب دسته</button></div>
+        <div class="d-flex gap-1 flex-wrap"><button class="btn btn-sm btn-outline-secondary" id="selRow">کل ردیفِ صندلی‌های انتخابی</button><button class="btn btn-sm btn-outline-secondary" id="selAll">همه</button><button class="btn btn-sm btn-outline-secondary" id="selNone">هیچ</button></div>
+    </div></div>
+    <div class="card"><div class="card-header fw-bold">خلاصه قیمت‌ها</div><div class="card-body small" id="summary"></div></div>
+</div>
+<div><div class="hint mb-1">کلیک = انتخاب/لغو · کشیدن روی بوم = انتخاب جعبه‌ای (Shift = افزودن) · چرخ ماوس = زوم · Alt+کشیدن = جابجایی</div><div class="sp-canvas" id="canvas"></div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+{{ layout|json_script:'layout-data' }}{{ overrides|json_script:'ov-data' }}
+<script src="{% static 'js/seatmap.js' %}"></script>
+<script>window.__SP__ = {save: "{% url 'panel_event_seat_prices_save' event.id %}", csrf: "{{ csrf_token }}", currency: "{{ site.currency_label|escapejs }}",
+  layout: JSON.parse(document.getElementById('layout-data').textContent), overrides: JSON.parse(document.getElementById('ov-data').textContent)};</script>
+<script src="{% static 'js/seatprice.js' %}"></script>
+{% endblock %}

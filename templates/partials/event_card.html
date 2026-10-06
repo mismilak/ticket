@@ -1,0 +1,15 @@
+<a href="{% url 'event_detail' event.slug %}" class="event-card position-relative">
+    <div class="position-relative">
+        <img class="poster" loading="lazy" src="{{ event.poster_url }}" alt="{{ event.title }}">
+        {% if event.category %}<span class="badge-cat">{{ event.category.name }}</span>{% endif %}
+    </div>
+    <div class="body">
+        <h3>{{ event.title }}</h3>
+        <div class="meta"><i class="bi bi-calendar-event"></i> {{ event.starts_at|jdate }}{% if event.sessions_count > 1 %} <span class="badge bg-light text-dark border">{{ event.sessions_count|fa }} سانس</span>{% endif %}</div>
+        {% if event.venue_label %}<div class="meta"><i class="bi bi-geo-alt"></i> {{ event.venue_label }}</div>{% endif %}
+        <div class="mt-2">
+            {% if event.is_on_sale and event.min_price != None %}<span class="small text-muted">از <b class="text-primary">{{ event.min_price|price }}</b></span>
+            {% else %}<span class="badge bg-secondary">{% if event.ends_at and event.ends_at < now %}برگزار شد{% else %}فروش بسته است{% endif %}</span>{% endif %}
+        </div>
+    </div>
+</a>
